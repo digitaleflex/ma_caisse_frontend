@@ -56,11 +56,14 @@ export function useFormMutation<TData = any, TVariables = any>({
             onSuccess?.(data)
         },
         onError: (error: any) => {
-            if (setError) {
+            if (setError && error?.body) {
                 applyServerValidationErrors(setError, error.body)
             }
+            // Erreur réseau (fetch reject => TypeError sans body) vs erreur HTTP
+            const isNetworkError = !error?.status && !error?.body
+            const message = error?.body?.message || errorMessage || (isNetworkError ? "Erreur réseau, veuillez réessayer" : "Une erreur est survenue")
             toast.error("Erreur", {
-                description: error.body?.message || errorMessage || "Une erreur est survenue",
+                description: message,
             })
             onError?.(error)
         },
