@@ -15,6 +15,7 @@ import { apiFetch } from "@/lib/api"
 import { Toaster } from "@/components/ui/sonner"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { productsService } from "@/services/products"
+import { useTabNavigation, Tab } from "@/lib/hooks/use-tab-navigation"
 import { AddSaleDialog } from "@/components/dialogs/add-sale-dialog"
 import { AddExpenseDialog } from "@/components/dialogs/add-expense-dialog"
 import { AddProductDialog } from "@/components/dialogs/add-product-dialog"
@@ -42,24 +43,9 @@ interface MainAppProps {
   isLoading?: boolean
 }
 
-type Tab = "home" | "inventory" | "summary" | "credits" | "profile" | "admin"
-
 export function MainApp({ userProfile, isLoading = false }: MainAppProps) {
-  // Initialiser l'onglet actif depuis le paramètre URL (pour persistance au rechargement)
-  const [activeTab, setActiveTab] = useState<Tab>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      const tabParam = params.get('tab')
-      if (tabParam && ['home', 'inventory', 'summary', 'credits', 'profile', 'admin'].includes(tabParam)) {
-        return tabParam as Tab
-      }
-    }
-    // Redirection automatique pour admin
-    if (userProfile.role === 'admin') {
-      return "admin"
-    }
-    return "home"
-  })
+  // Navigation centralisée (état, URL sync, boutons navigateur)
+  const { activeTab, setActiveTab } = useTabNavigation({ role: userProfile.role })
 
   // Global Dialog States
   const [showSaleDialog, setShowSaleDialog] = useState(false)
@@ -91,36 +77,11 @@ export function MainApp({ userProfile, isLoading = false }: MainAppProps) {
   const lowStockThreshold = userProfile.lowStockThreshold || 5
   const outOfStockCount = products.filter(p => p.quantity <= lowStockThreshold).length
 
-  // Synchroniser les changements d'onglet avec l'URL
+  // Quitter la vue abonnement si on change d'onglet via la nav bar
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('tab') !== activeTab) {
-      params.set('tab', activeTab)
-      const newUrl = `${window.location.pathname}?${params.toString()}`
-      window.history.pushState(null, '', newUrl)
-    }
-    // Scroll to top when tab changes
-    window.scrollTo(0, 0)
-
-    // Quitter la vue abonnement si on change d'onglet via la nav bar
     setShowSubscription(false)
   }, [activeTab])
 
-  // Gérer les boutons Précédent/Suivant du navigateur
-  useEffect(() => {
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search)
-      const tabParam = params.get('tab')
-      if (tabParam && ['home', 'inventory', 'summary', 'credits', 'profile', 'admin'].includes(tabParam)) {
-        setActiveTab(tabParam as Tab)
-      } else if (!tabParam) {
-        setActiveTab("home")
-      }
-    }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
   const [showSubscription, setShowSubscription] = useState(false)
 
   return (
