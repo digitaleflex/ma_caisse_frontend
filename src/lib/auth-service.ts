@@ -3,9 +3,8 @@
  * Utilise les fonctions low-level from auth.ts
  */
 
-import { apiFetch } from './api'
+import { apiFetch, refreshToken } from './api'
 import { 
-  setAccessToken, 
   getAccessToken, 
   setAuthData, 
   getAuthData, 
@@ -102,18 +101,14 @@ export const authService = {
 
   async refresh(): Promise<AuthResponse | null> {
     try {
-      const response = await apiFetch('/api/auth/refresh', {
-        method: 'POST',
-      })
-      if (response && response.token) {
-        setAccessToken(response.token)
-        // Re-establish auth data with new token
-        const user = getUser()
-        if (user) {
-          setAuthData({ token: response.token, user })
-        }
+      const refreshed = await refreshToken()
+      if (!refreshed) {
+        clearAuthData()
+        return null
       }
-      return response ? (response as AuthResponse) : null
+      // Le token a été mis à jour en mémoire par refreshToken
+      const user = getUser()
+      return user ? ({ token: getAccessToken()!, user } as AuthResponse) : null
     } catch (error) {
       clearAuthData()
       return null

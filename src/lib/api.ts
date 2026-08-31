@@ -1,7 +1,6 @@
 
 import { API_URL } from './config'
-import { getToken } from './auth'
-import { getAccessToken, setAccessToken } from './auth'
+import { getAccessToken, setAccessToken, clearAuthData } from './auth'
 
 
 const getBackendUrl = () => {
@@ -24,6 +23,31 @@ export type KnownErrorResponse = ValidationErrorResponse | MessageErrorResponse
 
 let isRefreshing = false
 
+/**
+ * Tente de rafraîchir le token via le cookie HttpOnly.
+ * Réutilisée par l'intercepteur 401 et par authService.refresh.
+ * Retourne true en cas de succès, false sinon (jamais d'exception).
+ */
+export async function refreshToken(): Promise<boolean> {
+  try {
+    const refreshRes = await fetch(`${getBackendUrl()}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include', // Send the refresh token cookie
+    })
+
+    if (!refreshRes.ok) return false
+
+    const refreshData = await refreshRes.json()
+    if (!refreshData.token) return false
+
+    // Update token in memory
+    setAccessToken(refreshData.token)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 export async function apiFetch(input: RequestInfo, init?: RequestInit) {
   const token = getAccessToken()
   const headers = new Headers(init?.headers)
@@ -39,6 +63,9 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
     ? `${getBackendUrl()}${input}`
     : input
 
+  // Le chemin de refresh (pour ne pas redéclencher le refresh sur une 401 du refresh lui-même)
+  const isRefreshRequest = typeof input === 'string' && input === '/api/auth/refresh'
+
   // Include credentials (cookies) for all requests
   const fetchInit: RequestInit = {
     ...init,
@@ -53,41 +80,34 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
   const body = isJson ? await res.json().catch(() => ({})) : undefined
 
   // Handle 401 Unauthorized (Token expired)
-  if (res.status === 401 && !input.toString().includes('/refresh') && !isRefreshing) {
+  if (res.status === 401 && !isRefreshRequest && !isRefreshing) {
     isRefreshing = true
     try {
-      // Attempt to refresh token using HttpOnly cookie
-      const refreshRes = await fetch(`${getBackendUrl()}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include', // Send the refresh token cookie
+      const refreshed = await refreshToken()
+
+      if (!refreshed) {
+        // Refresh échoué : session expire, déconnexion propre
+        clearAuthData()
+        window.location.href = '/'
+        throw new Error('AUTH_REFRESH_FAILED')
+      }
+
+      // Retry original request with new token
+      const freshToken = getAccessToken()
+      headers.set('Authorization', `Bearer ${freshToken}`)
+      res = await fetch(url, {
+        ...fetchInit,
+        headers,
       })
 
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json()
-        // Update token in memory
-        setAccessToken(refreshData.token)
-
-        // Retry original request with new token
-        headers.set('Authorization', `Bearer ${refreshData.token}`)
-        res = await fetch(url, {
-          ...fetchInit,
-          headers,
-        })
-
-        const newBody = isJson ? await res.json().catch(() => ({})) : undefined
-        if (!res.ok) {
-          const err: any = new Error('APIError')
-          err.status = res.status
-          err.body = newBody
-          throw err
-        }
-        return newBody
+      const newBody = isJson ? await res.json().catch(() => ({})) : undefined
+      if (!res.ok) {
+        const err: any = new Error('APIError')
+        err.status = res.status
+        err.body = newBody
+        throw err
       }
-    } catch (e) {
-      // Refresh failed — clear auth and redirect to login
-      const { clearAuthData } = await import('./auth')
-      clearAuthData()
-      window.location.href = '/'
+      return newBody
     } finally {
       isRefreshing = false
     }
