@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Card } from "@/components/ui/card"
 import { OverviewChart } from "@/components/ui/overview-chart"
 import { Button } from "@/components/ui/button"
-import { apiFetch } from "@/lib/api"
+import { businessApi } from "@/services"
 import { startOfDay, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, isAfter, isBefore, format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { FileText, Download } from "lucide-react"
@@ -43,28 +43,19 @@ export function SummaryTab({ userProfile, isPro, isLoadingSubscription, onNaviga
   // Fetch Sales
   const { data: sales = [] } = useQuery({
     queryKey: ["sales"],
-    queryFn: async () => {
-      const response = await apiFetch("/api/sales/list-sales", { method: "GET" })
-      return (response as { data: Transaction[] }).data || []
-    },
+    queryFn: businessApi.getSales,
   })
 
   // Fetch Expenses
   const { data: expenses = [] } = useQuery({
     queryKey: ["expenses"],
-    queryFn: async () => {
-      const response = await apiFetch("/api/expenses/list-expenses", { method: "GET" })
-      return (response as { data: Transaction[] }).data || []
-    },
+    queryFn: businessApi.getExpenses,
   })
 
   // Fetch Products for Cost Calculation
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
-    queryFn: async () => {
-      const response = await apiFetch("/api/products/list-products", { method: "GET" })
-      return (response as { data: any[] }).data || []
-    },
+    queryFn: businessApi.getProducts,
   })
 
   // Calculate period label

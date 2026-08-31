@@ -14,6 +14,7 @@ import { DebtorDetailsDialog } from "@/components/dialogs/debtor-details-dialog"
 import { EditDebtorDialog } from "@/components/dialogs/edit-debtor-dialog"
 import { FeatureLockedDialog } from "@/components/dialogs/feature-locked-dialog"
 import { apiFetch } from "@/lib/api"
+import { businessApi } from "@/services"
 import { generateDebtorsReport } from "@/lib/pdf-service"
 import { toast } from "sonner"
 import {
@@ -89,10 +90,7 @@ export function CreditsTab({ userProfile, isPro, isLoadingSubscription, onNaviga
   // Fetch debtors from API
   const { data: allDebtors = [], isLoading } = useQuery({
     queryKey: ["debtors"],
-    queryFn: async () => {
-      const response = await apiFetch("/api/debtors/list-debtors", { method: "GET" })
-      return (response as { data: Debtor[] }).data || []
-    },
+    queryFn: businessApi.getDebtors,
   })
 
   // Reset to first page when filters change
@@ -144,10 +142,7 @@ export function CreditsTab({ userProfile, isPro, isLoadingSubscription, onNaviga
   // Fetch repayments from API
   const { data: repayments = [] } = useQuery({
     queryKey: ["repayments"],
-    queryFn: async () => {
-      const response = await apiFetch("/api/repayments/list-repayments", { method: "GET" })
-      return (response as { data: Repayment[] }).data || []
-    },
+    queryFn: businessApi.getRepayments,
   })
 
   const deleteDebtorMutation = useMutation({
@@ -170,7 +165,7 @@ export function CreditsTab({ userProfile, isPro, isLoadingSubscription, onNaviga
   const totalDebt = allDebtors.reduce((sum, debtor) => sum + debtor.amount, 0)
 
   // Group repayments by debtor
-  const repaymentsByDebtor = repayments.reduce((acc, repayment) => {
+  const repaymentsByDebtor = repayments.reduce((acc: Record<string, any[]>, repayment: Repayment) => {
     // Safety check: handle both populated (object) and unpopulated (string) debtorId
     const debtorId = typeof repayment.debtorId === 'object'
       ? repayment.debtorId?._id
