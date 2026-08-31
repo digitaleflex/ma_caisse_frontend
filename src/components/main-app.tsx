@@ -15,7 +15,7 @@ import { apiFetch } from "@/lib/api"
 import { Toaster } from "@/components/ui/sonner"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { productsService } from "@/services/products"
-import { useTabNavigation, Tab } from "@/lib/hooks/use-tab-navigation"
+import { useTabNavigation, Tab, getVisibleTabs } from "@/lib/hooks/use-tab-navigation"
 import { AddSaleDialog } from "@/components/dialogs/add-sale-dialog"
 import { AddExpenseDialog } from "@/components/dialogs/add-expense-dialog"
 import { AddProductDialog } from "@/components/dialogs/add-product-dialog"
@@ -77,6 +77,19 @@ export function MainApp({ userProfile, isLoading = false }: MainAppProps) {
   const lowStockThreshold = userProfile.lowStockThreshold || 5
   const outOfStockCount = products.filter(p => p.quantity <= lowStockThreshold).length
 
+  // Onglets visibles selon le rôle (source unique de vérité)
+  const visibleTabs = getVisibleTabs(userProfile.role)
+
+  // Métadonnées (icône + badge) pour chaque onglet
+  const tabMeta: Record<Tab, { icon: any; badgeCount?: number }> = {
+    home: { icon: Home },
+    inventory: { icon: Package, badgeCount: outOfStockCount },
+    summary: { icon: TrendingUp },
+    credits: { icon: Users },
+    profile: { icon: User },
+    admin: { icon: ShieldCheck },
+  }
+
   // Quitter la vue abonnement si on change d'onglet via la nav bar
   useEffect(() => {
     setShowSubscription(false)
@@ -119,25 +132,19 @@ export function MainApp({ userProfile, isLoading = false }: MainAppProps) {
         </div>
 
         <div className="flex flex-col gap-2 px-4 flex-1">
-          {userProfile.role !== 'admin' && (
-            <>
-              <NavButton active={activeTab === "home"} onClick={() => setActiveTab("home")} icon={Home} label="Accueil" />
-              <NavButton active={activeTab === "inventory"} onClick={() => setActiveTab("inventory")} icon={Package} label="Inventaire" badgeCount={outOfStockCount} />
-              <NavButton active={activeTab === "summary"} onClick={() => setActiveTab("summary")} icon={TrendingUp} label="Bilan" />
-              <NavButton active={activeTab === "credits"} onClick={() => setActiveTab("credits")} icon={Users} label="Crédits" />
-              {/* Desktop "Action" Buttons are usually in the content area, but we can add shortcuts here if needed. 
-                    For now, keep standard nav. Profil is accessible via bottom user info or potentially a tab.
-                    Let's keep Profile as a Tab in Desktop Sidebar for consistency with previous PC layout.
-                */}
-              <NavButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label="Profil" />
-            </>
-          )}
-          {userProfile.role === 'admin' && (
-            <>
-              <NavButton active={activeTab === "admin"} onClick={() => setActiveTab("admin")} icon={ShieldCheck} label="Dashboard" />
-              <NavButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label="Profil" />
-            </>
-          )}
+          {visibleTabs.map(({ tab, label }) => {
+            const meta = tabMeta[tab]
+            return (
+              <NavButton
+                key={tab}
+                active={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+                icon={meta.icon}
+                label={label}
+                badgeCount={meta.badgeCount}
+              />
+            )
+          })}
         </div>
 
         {/* User Info (Desktop Bottom) */}
@@ -159,8 +166,8 @@ export function MainApp({ userProfile, isLoading = false }: MainAppProps) {
         <div className="flex items-center justify-around px-2 h-16">
           {userProfile.role !== 'admin' ? (
             <>
-              <MobileNavButton active={activeTab === "home"} onClick={() => setActiveTab("home")} icon={Home} label="Accueil" />
-              <MobileNavButton active={activeTab === "inventory"} onClick={() => setActiveTab("inventory")} icon={Package} label="Stock" badgeCount={outOfStockCount} />
+              <MobileNavButton active={activeTab === "home"} onClick={() => setActiveTab("home")} icon={tabMeta.home.icon} label="Accueil" />
+              <MobileNavButton active={activeTab === "inventory"} onClick={() => setActiveTab("inventory")} icon={tabMeta.inventory.icon} label="Stock" badgeCount={outOfStockCount} />
 
               {/* CENTRAL ACTION BUTTON */}
               <DropdownMenu onOpenChange={setActionMenuOpen}>
@@ -206,14 +213,14 @@ export function MainApp({ userProfile, isLoading = false }: MainAppProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <MobileNavButton active={activeTab === "credits"} onClick={() => setActiveTab("credits")} icon={Users} label="Crédits" />
-              <MobileNavButton active={activeTab === "summary"} onClick={() => setActiveTab("summary")} icon={TrendingUp} label="Bilan" />
+              <MobileNavButton active={activeTab === "credits"} onClick={() => setActiveTab("credits")} icon={tabMeta.credits.icon} label="Crédits" />
+              <MobileNavButton active={activeTab === "summary"} onClick={() => setActiveTab("summary")} icon={tabMeta.summary.icon} label="Bilan" />
             </>
           ) : (
             // Admin Mobile Nav (Simplified)
             <>
-              <MobileNavButton active={activeTab === "admin"} onClick={() => setActiveTab("admin")} icon={ShieldCheck} label="Admin" />
-              <MobileNavButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label="Profil" />
+              <MobileNavButton active={activeTab === "admin"} onClick={() => setActiveTab("admin")} icon={tabMeta.admin.icon} label="Admin" />
+              <MobileNavButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={tabMeta.profile.icon} label="Profil" />
             </>
           )}
         </div>

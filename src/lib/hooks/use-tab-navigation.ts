@@ -21,10 +21,8 @@ export function isValidTab(value: string | null): value is Tab {
  * - Le reset au scroll top
  */
 export function useTabNavigation({
-    defaultTab = "home",
     role,
 }: {
-    defaultTab?: Tab
     role?: string
 }) {
     const [activeTab, setActiveTab] = useState<Tab>(() => {
@@ -35,9 +33,8 @@ export function useTabNavigation({
                 return tabParam
             }
         }
-        // Redirection automatique pour admin
-        if (role === 'admin') return "admin"
-        return defaultTab
+        // Onglet par défaut selon le rôle
+        return getDefaultTab(role)
     })
 
     // Synchroniser les changements d'onglet avec l'URL
@@ -59,19 +56,20 @@ export function useTabNavigation({
             if (isValidTab(tabParam)) {
                 setActiveTab(tabParam)
             } else if (!tabParam) {
-                setActiveTab("home")
+                setActiveTab(getDefaultTab(role))
             }
         }
 
         window.addEventListener('popstate', handlePopState)
         return () => window.removeEventListener('popstate', handlePopState)
-    }, [])
+    }, [role])
 
     return { activeTab, setActiveTab }
 }
 
 /**
  * Détermine les onglets visibles selon le rôle.
+ * Source unique de vérité pour la barre de navigation (bureau + mobile).
  */
 export function getVisibleTabs(role?: string): { tab: Tab; label: string }[] {
     const isAdmin = role === 'admin'
@@ -84,7 +82,16 @@ export function getVisibleTabs(role?: string): { tab: Tab; label: string }[] {
     return [
         { tab: "home", label: "Accueil" },
         { tab: "inventory", label: "Stock" },
-        { tab: "credits", label: "Crédits" },
         { tab: "summary", label: "Bilan" },
+        { tab: "credits", label: "Crédits" },
+        { tab: "profile", label: "Profil" },
     ]
+}
+
+/**
+ * Onglet vers lequel écraser la valeur par défaut selon le rôle.
+ * Permet au hook de rediriger un non-admin vers l'accueil et un admin vers le dashboard.
+ */
+export function getDefaultTab(role?: string): Tab {
+    return role === 'admin' ? 'admin' : 'home'
 }
