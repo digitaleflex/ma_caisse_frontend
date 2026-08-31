@@ -1,23 +1,6 @@
-import { apiFetch } from '../lib/api'
-
 /**
- * Service pour la gestion des dépenses (API)
+ * @deprecated Use `import { expensesService } from '@/services'` directly.
+ * Re-export depuis le service centralisé.
  */
-export const expensesService = {
-    /**
-     * Récupère la liste des dépenses
-     */
-    listExpenses: async () => {
-        const res = await apiFetch('/api/expenses/list-expenses')
-        return res.data
-    },
 
-    /**
-     * Supprime une dépense
-     */
-    deleteExpense: async (id: string) => {
-        await apiFetch(`/api/expenses/delete-expense/${id}`, {
-            method: 'DELETE',
-        })
-    },
-}
+export { expensesService } from '@/services'
