@@ -1,0 +1,61 @@
+# Dépendances - installées dans le conteneur
+node_modules/
+.pnpm-store/
+
+# Build outputs - reconstruits dans le conteneur
+dist/
+build/
+.next/
+out/
+
+# Fichiers de développement
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environnement - ne jamais inclure dans l'image
+.env
+.env.*
+!.env.example
+
+# IDE et éditeur
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Tests et couverture
+coverage/
+.nyc_output/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+
+# Documentation
+README.md
+LICENSE
+docs/
+*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+.parcel-cache/
+.turbo/

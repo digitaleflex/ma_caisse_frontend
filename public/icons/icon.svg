@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond circulaire (bg-primary: #ff6d00) -->
+  <circle cx="256" cy="256" r="256" fill="#ff6d00"/>
+  
+  <!-- Icône Store (Lucide) centrée et agrandie -->
+  <g transform="translate(106, 106) scale(12.5)">
+    <path 
+      d="M3 21l18 0M5 21l0-8M19 21l0-8M2 10.5h20M2 10l0-6l2-2.5h16l2 2.5l0 6M6 10l0-4M18 10l0-4" 
+      stroke="#ffffff" 
+      stroke-width="2.5" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+      fill="none"
+    />
+  </g>
+</svg>
