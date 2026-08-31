@@ -80,4 +80,46 @@ export default defineConfig({
       "@radix-ui/react-tooltip",
     ],
   },
+  build: {
+    // Réduction de la taille des chunks via code-splitting manuel manuel
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Vendor React + React DOM
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
+            return 'react'
+          }
+          // Radix UI
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'radix'
+          }
+          // TanStack Query
+          if (id.includes('node_modules/@tanstack')) {
+            return 'query'
+          }
+          // Forms (react-hook-form + zod)
+          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/zod') || id.includes('node_modules/@hookform')) {
+            return 'forms'
+          }
+          // Recharts
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'charts'
+          }
+          // jsPDF + html2canvas (gros, pour les exports)
+          if (id.includes('node_modules/jspdf') || id.includes('node_modules/jspdf-autotable') || id.includes('node_modules/html2canvas')) {
+            return 'pdf'
+          }
+          // date-fns
+          if (id.includes('node_modules/date-fns')) {
+            return 'date'
+          }
+          // Lucide icons
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons'
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 700,
+  },
 })
