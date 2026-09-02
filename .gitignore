@@ -3,3 +3,5 @@ dist/
 dev-dist/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+.vercel
