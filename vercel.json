@@ -2,12 +2,5 @@
   "buildCommand": "pnpm install && pnpm build",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
-  "devCommand": "pnpm dev",
-  "framework": "vite",
-  "regions": ["cdg1"],
-  "functions": {
-    "src/**/*.ts": {
-      "runtime": "nodejs22.x"
-    }
-  }
+  "framework": "vite"
 }
