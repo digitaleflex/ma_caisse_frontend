@@ -1,7 +1,12 @@
-node_modules
+node_modules/
 dist/
 dev-dist/
-tsconfig.tsbuildinfo
 *.tsbuildinfo
 
-.vercel
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
